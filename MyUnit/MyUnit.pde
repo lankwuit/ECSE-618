@@ -111,10 +111,12 @@ final int         worldPixelHeight                    = 650;
 /* graphical elements */
 PShape endEffector;
 PShape v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13;
-PShape triggertop, triggerbot, faketop, fakebot;
+PShape triggertop, triggerbot, faketop, fakebot,finish;
+PVector posftop = new PVector(3,0);
+PVector posfbot = new PVector(0,6);
 
 //for controlling if the trigger spot have ever been reached
-int flagtop=0, flagbot=0;
+boolean flagtop=false, flagbot=false;
 /* end elements definition *********************************************************************************************/ 
 
 
@@ -163,7 +165,7 @@ void setup(){
   v2 = create_wall(posv2.x , 2, posv2.x , 4);
   v3 = create_wall(posv3.x , 5, posv3.x , 8);
   v4 = create_wall(posv4.x , 1, posv4.x , 3);
-  v5 = create_wall(posv5.x , 4, posv5.x , 6);
+  v5 = create_wall(posv5.x , 4, posv5.x , 8);
   v6 = create_wall(posv6.x , 1, posv6.x , 3);
   v7 = create_wall(posv7.x , 4, posv7.x , 6);
   v8 = create_wall(posv8.x , 1, posv8.x , 3);
@@ -214,9 +216,22 @@ void setup(){
   h13.setStroke(color(0));
   
   /* create zones and switch mechanics */
+  triggertop = createShape(RECT, deviceOrigin.x + 5*pixelsPerMeterh+20, deviceOrigin.y + 2*pixelsPerMeterv+20, pixelsPerMeterh-40, pixelsPerMeterv-40);
+  triggertop.setFill(color(200,0,50));
+  triggerbot = createShape(RECT, deviceOrigin.x + 2*pixelsPerMeterh+20, deviceOrigin.y + 7*pixelsPerMeterv+20, pixelsPerMeterh-40, pixelsPerMeterv-40);
+  triggerbot.setFill(color(0,50,200));
+  //create fake walls
+  faketop = create_wall(posftop.x , 3, posftop.x , 4);
+  fakebot = create_wall(3, posfbot.y , 4,posfbot.y);
+  fakebot.setStroke(color(0,50,200));
+  faketop.setStroke(color(200,0,50));
+  faketop.setStrokeWeight(24);
+  fakebot.setStrokeWeight(24);
 
+// create finish
+  finish = createShape(RECT, deviceOrigin.x + 6*pixelsPerMeterh+20, deviceOrigin.y + 6*pixelsPerMeterv+20, pixelsPerMeterh-40, pixelsPerMeterv-40);
+  finish.setFill(color(100,50,100));
 
-  
   /* setup framerate speed */
   frameRate(baseFrameRate);
   
@@ -261,10 +276,28 @@ class SimulationThread implements Runnable{
       /* haptic wall force calculation */
       fWall.set(0, 0);
 
+      
+
       //converstion to 140x80 coordinates, reasonfor +3.5 is the origin of EE is thought to be 0,0
       //but to our cordinate system, it is in fact 3.5,0
       posEEsc.set(posEE.x*pixelsPerMeterEE/pixelsPerMeterh+3.5,posEE.y*pixelsPerMeterEE/pixelsPerMeterv);
       float temp, temp2;
+      //see if the ee has reached any trigger
+      if (posEEsc.x >5 && posEEsc.x <6 && posEEsc.y < 3 && posEEsc.y >2){
+        flagtop = true;
+      }
+      if (posEEsc.x >2 && posEEsc.x <3 && posEEsc.y < 8 && posEEsc.y >7 ){
+        flagbot = true;
+      }
+
+      // change along with the flag condition:
+      if(flagtop){
+      triggertop.setFill(color(0,0,0));
+      }
+      if(flagbot){
+      triggerbot.setFill(color(0,0,0));
+      }
+
 //configuring walls for y
       if (posEEsc.y < 2.0){
         penWall.set(abs(posv1.x- posEEsc.x)<rEEx ? (posv1.x>posEEsc.x ? (posv1.x- posEEsc.x-rEEx):(-posv1.x+posEEsc.x+rEEx)):(
@@ -284,6 +317,7 @@ class SimulationThread implements Runnable{
                 abs(posv8.x- posEEsc.x)<rEEx ? (posv8.x>posEEsc.x ? (posv8.x- posEEsc.x-rEEx):(-posv8.x+posEEsc.x+rEEx)):(
                   abs(posv10.x- posEEsc.x)<rEEx ? (posv10.x>posEEsc.x ? (posv10.x- posEEsc.x-rEEx):(-posv10.x+posEEsc.x+rEEx)): 0
                   )
+                  
                 )
               )
             )
@@ -291,7 +325,8 @@ class SimulationThread implements Runnable{
       }else if(posEEsc.y < 4.0){
         penWall.set(abs(posv1.x- posEEsc.x)<rEEx ? (posv1.x>posEEsc.x ? (posv1.x- posEEsc.x-rEEx):(-posv1.x+posEEsc.x+rEEx)):(
           abs(posv2.x- posEEsc.x)<rEEx ? (posv2.x>posEEsc.x ? (posv2.x- posEEsc.x-rEEx):(-posv2.x+posEEsc.x+rEEx)):(
-            abs(posv10.x- posEEsc.x)<rEEx ? (posv10.x>posEEsc.x ? (posv10.x- posEEsc.x-rEEx):(-posv10.x+posEEsc.x+rEEx)): 0
+            abs(posv10.x- posEEsc.x)<rEEx ? (posv10.x>posEEsc.x ? (posv10.x- posEEsc.x-rEEx):(-posv10.x+posEEsc.x+rEEx)): (
+                    flagtop ? 0 : abs(posftop.x- posEEsc.x)<rEEx ? (posftop.x>posEEsc.x ? (posftop.x- posEEsc.x-rEEx):(-posftop.x+posEEsc.x+rEEx)) : 0)
             )
           ),0);
       }else if(posEEsc.y < 5.0){
@@ -308,13 +343,15 @@ class SimulationThread implements Runnable{
           ),0);
       }else if(posEEsc.y < 7.0){
         penWall.set(abs(posv3.x- posEEsc.x)<rEEx ? (posv3.x>posEEsc.x ? (posv3.x- posEEsc.x-rEEx):(-posv3.x+posEEsc.x+rEEx)):(
+          abs(posv5.x- posEEsc.x)<rEEx ? (posv5.x>posEEsc.x ? (posv5.x- posEEsc.x-rEEx):(-posv5.x+posEEsc.x+rEEx)):(
             abs(posv11.x- posEEsc.x)<rEEx ? (posv11.x>posEEsc.x ? (posv11.x- posEEsc.x-rEEx):(-posv11.x+posEEsc.x+rEEx)): 0
-            
+          )
           ),0);
       }else if(posEEsc.y < 8.0){
         penWall.set(abs(posv3.x- posEEsc.x)<rEEx ? (posv3.x>posEEsc.x ? (posv3.x- posEEsc.x-rEEx):(-posv3.x+posEEsc.x+rEEx)):(
+          abs(posv5.x- posEEsc.x)<rEEx ? (posv5.x>posEEsc.x ? (posv5.x- posEEsc.x-rEEx):(-posv5.x+posEEsc.x+rEEx)):(
             abs(posv12.x- posEEsc.x)<rEEx ? (posv12.x>posEEsc.x ? (posv12.x- posEEsc.x-rEEx):(-posv12.x+posEEsc.x+rEEx)): 0
-            
+          )
           ),0);
       };
       temp = penWall.x;
@@ -342,7 +379,8 @@ class SimulationThread implements Runnable{
         ));
       }else if (posEEsc.x < 4.0){
         penWall.set(0,
-              abs(posh13.y- posEEsc.y)<rEEy ? (posh13.y>posEEsc.y ? (posh13.y- posEEsc.y-rEEy):(-posh13.y+posEEsc.y+rEEy)): 0     
+              abs(posh13.y- posEEsc.y)<rEEy ? (posh13.y>posEEsc.y ? (posh13.y- posEEsc.y-rEEy):(-posh13.y+posEEsc.y+rEEy)): (
+                    flagbot ? 0 : abs(posfbot.y- posEEsc.y)<rEEy ? (posfbot.y>posEEsc.y ? (posfbot.y- posEEsc.y-rEEy):(-posfbot.y+posEEsc.y+rEEy)) : 0)  
           );
       }else if (posEEsc.x < 5.0){
         penWall.set(0,abs(posh2.y- posEEsc.y)<rEEy ? (posh2.y>posEEsc.y ? (posh2.y- posEEsc.y-rEEy):(-posh2.y+posEEsc.y+rEEy)):(
@@ -359,7 +397,8 @@ class SimulationThread implements Runnable{
           abs(posh8.y- posEEsc.y)<rEEy ? (posh8.y>posEEsc.y ? (posh8.y- posEEsc.y-rEEy):(-posh8.y+posEEsc.y+rEEy)): (
               abs(posh10.y- posEEsc.y)<rEEy ? (posh10.y>posEEsc.y ? (posh10.y- posEEsc.y-rEEy):(-posh10.y+posEEsc.y+rEEy)): (
                 abs(posh11.y- posEEsc.y)<rEEy ? (posh11.y>posEEsc.y ? (posh11.y- posEEsc.y-rEEy):(-posh11.y+posEEsc.y+rEEy)): 0
-              )
+                )
+              
           )
         ));
       }else if (posEEsc.x < 7.0){
@@ -452,6 +491,14 @@ void update_animation(float th1, float th2, float xE, float yE){
   shape(v10);
   shape(v11);
   shape(v12);
+  if(!flagtop){
+    shape(triggertop);
+    shape(faketop);
+  }
+  if(!flagbot){
+    shape(triggerbot);
+    shape(fakebot);
+  }
   
   
   translate(xE, yE);
