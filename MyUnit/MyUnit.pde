@@ -230,7 +230,7 @@ void setup(){
 
 // create finish
   finish = createShape(RECT, deviceOrigin.x + 6*pixelsPerMeterh+20, deviceOrigin.y + 6*pixelsPerMeterv+20, pixelsPerMeterh-40, pixelsPerMeterv-40);
-  finish.setFill(color(100,50,100));
+  finish.setFill(color(255,255,0));
 
   /* setup framerate speed */
   frameRate(baseFrameRate);
@@ -499,7 +499,7 @@ void update_animation(float th1, float th2, float xE, float yE){
     shape(triggerbot);
     shape(fakebot);
   }
-  
+  shape(finish);
   
   translate(xE, yE);
   shape(endEffector);
